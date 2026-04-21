@@ -3,7 +3,8 @@ package org.example;
 /**
  * The Main class serves as the entry point for the application.
  * This class is marked as public to ensure it is visible in the generated JavaDoc.
- * * @author Kostiantyn
+ *
+ * @author Someone
  * @version 1.0
  */
 public class Main {
@@ -12,13 +13,14 @@ public class Main {
      * Default constructor for the Main class.
      * Explicitly declaring a public constructor ensures its visibility in documentation.
      */
-    public Main() {}
+    public Main() {
+    }
 
     /**
      * A test method to verify the automation of JavaDoc deployment.
      * This method will appear in the 'Method Summary' section of the documentation.
      */
-    public void TestMethod() {
+    public void testMethod() {
         System.out.println("Method executed successfully");
     }
 
