@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: ./Project-
+        working-directory: Project-
     permissions:
       contents: write
     steps:
