@@ -1,1 +1,0 @@
-memberSearchIndex = [{"p":"org.example","c":"Main","l":"Main()","u":"%3Cinit%3E()","k":"3"}];updateSearchResults();
