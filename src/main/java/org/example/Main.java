@@ -18,7 +18,9 @@ public class Main {
      * A test method to verify the automation of JavaDoc deployment.
      * This method will appear in the 'Method Summary' section of the documentation.
      */
-    public void test() {if(true){System.out.println("No spaces here");}}
+    public void TestMethod() {
+        System.out.println("Method executed successfully");
+    }
 
     /**
      * The main entry point of the program.
