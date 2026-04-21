@@ -1,2 +1,2 @@
 # Project-
-https://evgeniy0y0.github.io/Project-/
+https://evgeniy0y0.github.io/NetworkApp/
