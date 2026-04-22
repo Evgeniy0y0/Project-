@@ -1,6 +1,5 @@
 package org.example;
 
-
 /**
  * The Main class serves as the entry point for the application.
  * This class is marked as public to ensure it is visible in the generated JavaDoc.
@@ -23,6 +22,13 @@ public class Main {
      */
     public void testMethod() {
         System.out.println("Method executed successfully");
+    }
+
+    /**
+     * Simple method for testing the workflow.
+     */
+    public void sayHello() {
+        System.out.println("Hello from the second laptop!");
     }
 
     /**
