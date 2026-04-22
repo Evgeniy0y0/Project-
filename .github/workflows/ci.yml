@@ -6,17 +6,35 @@ on:
   pull_request:
     branches: [ "main", "development" ]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 17
+
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+          cache: maven
+
       - name: Run Checkstyle
         run: mvn checkstyle:check
-      - name: Generate JavaDoc (test)
+
+      - name: Generate JavaDoc
         run: mvn javadoc:javadoc
+
+      - name: Create .nojekyll
+        run: touch target/site/apidocs/.nojekyll
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          folder: target/site/apidocs
+          branch: gh-pages
