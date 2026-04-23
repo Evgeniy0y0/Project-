@@ -29,3 +29,6 @@ target/
 src/main/resources/db.properties
 *.mv.db
 *.trace.db
+
+*.iml
+.mvn/
