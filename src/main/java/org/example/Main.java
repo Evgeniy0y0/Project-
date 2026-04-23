@@ -1,8 +1,10 @@
 package org.example;
 
+import org.example.util.DatabaseHelper;
+
 /**
  * The Main class serves as the entry point for the application.
- * This class is marked as public to ensure it is visible in the generated JavaDoc.
+ * This class is marked as public to ensure it is visible in the generated Javadoc.
  *
  * @author Someone
  * @version 1.0
@@ -17,7 +19,7 @@ public class Main {
     }
 
     /**
-     * A test method to verify the automation of JavaDoc deployment.
+     * A test method to verify the automation of Javadoc deployment.
      * This method will appear in the 'Method Summary' section of the documentation.
      */
     public void testMethod() {
@@ -29,6 +31,8 @@ public class Main {
      * * @param args command-line arguments passed to the application.
      */
     public static void main(String[] args) {
+        DatabaseHelper.initializeDatabase();
+
         System.out.println("Hello and welcome!");
 
         for (int i = 1; i <= 5; i++) {
