@@ -1,42 +1,52 @@
 package org.example;
 
+import org.example.dao.PostDAO;
+import org.example.dao.UserDAO;
+import org.example.model.Post;
 import org.example.util.DatabaseHelper;
 
+import java.util.List;
+
 /**
- * The Main class serves as the entry point for the application.
- * This class is marked as public to ensure it is visible in the generated Javadoc.
+ * The Main class serves as the entry point for the NetworkApp application.
+ * It handles the initialization of the database and demonstrates CRUD operations.
  *
- * @author Someone
+ * @author Eugene
  * @version 1.0
  */
 public class Main {
 
     /**
      * Default constructor for the Main class.
-     * Explicitly declaring a public constructor ensures its visibility in documentation.
      */
     public Main() {
     }
 
     /**
-     * A test method to verify the automation of Javadoc deployment.
-     * This method will appear in the 'Method Summary' section of the documentation.
-     */
-    public void testMethod() {
-        System.out.println("Method executed successfully");
-    }
-
-    /**
      * The main entry point of the program.
-     * * @param args command-line arguments passed to the application.
+     * @param args command-line arguments passed to the application.
      */
     public static void main(String[] args) {
-        DatabaseHelper.initializeDatabase();
+        try {
+            DatabaseHelper.initializeDatabase();
+            System.out.println("Status: Database initialized successfully.");
+        } catch (Exception e) {
+            System.err.println("Status: Critical error during database initialization!");
+            return;
+        }
 
-        System.out.println("Hello and welcome!");
+        UserDAO userDAO = new UserDAO();
 
-        for (int i = 1; i <= 5; i++) {
-            System.out.println("i = " + i);
+        PostDAO postDAO = new PostDAO();
+
+
+        List<Post> allPosts = postDAO.getAllPosts();
+
+        for (org.example.model.Post p : allPosts) {
+            System.out.println("---------------------------------");
+            System.out.println("Author: " + p.getAuthor());
+            System.out.println("Content: " + p.getContent());
+            System.out.println("Likes: " + p.getLikes());
         }
     }
 }
