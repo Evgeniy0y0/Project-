@@ -24,7 +24,11 @@ hs_err_pid*
 replay_pid*
 
 target/
-*.class
 .idea/
+/db/
+src/main/resources/db.properties
+*.mv.db
+*.trace.db
+
 *.iml
 .mvn/
