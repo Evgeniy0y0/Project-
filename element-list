@@ -1,1 +1,4 @@
 org.example
+org.example.dao
+org.example.model
+org.example.util
