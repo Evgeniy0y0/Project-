@@ -4,10 +4,12 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import org.example.dao.UserDAO;
+import org.example.util.exceptions.UserAlreadyExistsException;
 
 import java.io.IOException;
 
@@ -20,15 +22,27 @@ public class RegisterController {
 
     @FXML
     private void handleRegister() {
-        String nick = nicknameField.getText();
-        String email = emailField.getText();
+        hideError();
+        String nick = nicknameField.getText().trim();
+        String email = emailField.getText().trim();
         String pass = passwordField.getText();
 
-        if (userDAO.registerUser(nick, pass, email)) {
+        if (nick.isEmpty() || email.isEmpty() || pass.isEmpty()) {
+            showError("All fields are required!");
+            return;
+        }
+
+        try {
+            userDAO.registerUser(nick, pass, email);
+
             System.out.println("Registration successful for: " + nick);
             handleBackToLogin();
-        } else {
-            System.out.println("Registration failed. Check if user already exists.");
+
+        } catch (UserAlreadyExistsException e) {
+            showError(e.getMessage());
+        } catch (Exception e) {
+            showError("Connection error. Please try again later.");
+            e.printStackTrace();
         }
     }
 
@@ -43,5 +57,17 @@ public class RegisterController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @FXML private Label errorLabel;
+    private void showError(String message) {
+        errorLabel.setText(message);
+        errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
+    }
+
+    private void hideError() {
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
     }
 }

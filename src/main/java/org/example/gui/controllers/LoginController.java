@@ -4,10 +4,12 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import org.example.dao.UserDAO;
+import org.example.util.exceptions.InvalidCredentialsException;
 
 import java.io.IOException;
 
@@ -19,13 +21,20 @@ public class LoginController {
 
     @FXML
     private void handleLogin() {
-        String email = emailField.getText();
+        hideError();
+
+        String email = emailField.getText().trim();
         String pass = passwordField.getText();
 
-        if (userDAO.validateUser(email, pass)) {
-            System.out.println("Login successful for: " + email);
-        } else {
-            System.out.println("Login failed: Invalid credentials.");
+        try {
+            userDAO.validateUser(email, pass);
+            System.out.println("Login successful!");
+
+        } catch (InvalidCredentialsException e) {
+            showError(e.getMessage());
+        } catch (Exception e) {
+            showError("System error occurred.");
+            e.printStackTrace();
         }
     }
 
@@ -42,5 +51,18 @@ public class LoginController {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    @FXML private Label errorLabel; // Не забудь добавить @FXML
+
+    private void showError(String message) {
+        errorLabel.setText(message);
+        errorLabel.setVisible(true);
+        errorLabel.setManaged(true);
+    }
+
+    private void hideError() {
+        errorLabel.setVisible(false);
+        errorLabel.setManaged(false);
     }
 }
