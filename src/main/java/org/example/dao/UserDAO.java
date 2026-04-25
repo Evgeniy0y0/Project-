@@ -7,8 +7,8 @@ import org.example.util.exceptions.UserAlreadyExistsException;
 import java.sql.*;
 
 public class UserDAO {
-    public void validateUser(String email, String password) throws InvalidCredentialsException {
-        String sql = "SELECT * FROM users WHERE email = ? AND password = ?";
+    public String validateUser(String email, String password) throws InvalidCredentialsException {
+        String sql = "SELECT nickname FROM users WHERE email = ? AND password = ?";
 
         try (Connection conn = DatabaseHelper.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -17,12 +17,15 @@ public class UserDAO {
             pstmt.setString(2, password);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                if (!rs.next()) {
+                if (rs.next()) {
+                    return rs.getString("nickname");
+                } else {
                     throw new InvalidCredentialsException("Invalid email or password.");
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
+            throw new RuntimeException("Database error");
         }
     }
 

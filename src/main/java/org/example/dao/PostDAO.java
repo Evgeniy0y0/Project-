@@ -7,40 +7,38 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PostDAO {
-    public void save(Post post) {
+    public void savePost(String content, String author) {
         String sql = "INSERT INTO posts (author_nickname, content, likes_count) VALUES (?, ?, ?)";
-
         try (Connection conn = DatabaseHelper.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, post.getAuthor());
-            pstmt.setString(2, post.getContent());
-            pstmt.setInt(3, post.getLikes());
-
+            pstmt.setString(1, author);
+            pstmt.setString(2, content);
+            pstmt.setInt(3, 0);
             pstmt.executeUpdate();
-            System.out.println("Success: Post has been saved to H2 database.");
-
         } catch (SQLException e) {
-            System.err.println("Error: Failed to save post - " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     public List<Post> getAllPosts() {
         List<Post> posts = new ArrayList<>();
-        String sql = "SELECT post_id, author_nickname, content, likes_count FROM posts";
+        String sql = "SELECT * FROM posts ORDER BY post_id DESC";
 
         try (Connection conn = DatabaseHelper.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
-                Post post = new Post(rs.getString("author_nickname"), rs.getString("content"));
+                Post post = new Post(
+                        rs.getString("author_nickname"),
+                        rs.getString("content")
+                );
                 post.setId(rs.getInt("post_id"));
                 post.setLikes(rs.getInt("likes_count"));
                 posts.add(post);
             }
         } catch (SQLException e) {
-            System.err.println("Error: Could not retrieve posts - " + e.getMessage());
+            e.printStackTrace();
         }
         return posts;
     }
