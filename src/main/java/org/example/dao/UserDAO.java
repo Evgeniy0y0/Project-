@@ -1,10 +1,13 @@
 package org.example.dao;
 
 import org.example.util.DatabaseHelper;
+import org.example.util.exceptions.InvalidCredentialsException;
+import org.example.util.exceptions.UserAlreadyExistsException;
+
 import java.sql.*;
 
 public class UserDAO {
-    public boolean validateUser(String email, String password) {
+    public void validateUser(String email, String password) throws InvalidCredentialsException {
         String sql = "SELECT * FROM users WHERE email = ? AND password = ?";
 
         try (Connection conn = DatabaseHelper.getConnection();
@@ -14,15 +17,16 @@ public class UserDAO {
             pstmt.setString(2, password);
 
             try (ResultSet rs = pstmt.executeQuery()) {
-                return rs.next();
+                if (!rs.next()) {
+                    throw new InvalidCredentialsException("Invalid email or password.");
+                }
             }
         } catch (SQLException e) {
-            System.err.println("Database error during validation: " + e.getMessage());
-            return false;
+            e.printStackTrace();
         }
     }
 
-    public boolean registerUser(String nickname, String password, String email) {
+    public void registerUser(String nickname, String password, String email) throws UserAlreadyExistsException {
         String sql = "INSERT INTO users (nickname, password, email) VALUES (?, ?, ?)";
 
         try (Connection conn = DatabaseHelper.getConnection();
@@ -32,11 +36,12 @@ public class UserDAO {
             pstmt.setString(2, password);
             pstmt.setString(3, email);
 
-            int rowsAffected = pstmt.executeUpdate();
-            return rowsAffected > 0;
+            pstmt.executeUpdate();
         } catch (SQLException e) {
-            System.err.println("Registration error: " + e.getMessage());
-            return false;
+            if (e.getErrorCode() == 23505) {
+                throw new UserAlreadyExistsException("A user with this nickname or email already exists.");
+            }
+            e.printStackTrace();
         }
     }
 

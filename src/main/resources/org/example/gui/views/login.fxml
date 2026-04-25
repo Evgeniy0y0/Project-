@@ -10,6 +10,7 @@
     </padding>
 
     <Label text="Login NetworkApp" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+    <Label fx:id="errorLabel" text="" style="-fx-text-fill: red; -fx-font-size: 12px;" managed="false" visible="false"/>
 
     <TextField fx:id="emailField" promptText="Email address"/>
     <PasswordField fx:id="passwordField" promptText="Password"/>
