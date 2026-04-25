@@ -9,6 +9,7 @@ import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.stage.Stage;
 import org.example.dao.UserDAO;
+import org.example.util.InputValidator;
 import org.example.util.exceptions.UserAlreadyExistsException;
 
 import java.io.IOException;
@@ -23,26 +24,18 @@ public class RegisterController {
     @FXML
     private void handleRegister() {
         hideError();
+
         String nick = nicknameField.getText().trim();
         String email = emailField.getText().trim();
         String pass = passwordField.getText();
 
-        if (nick.isEmpty() || email.isEmpty() || pass.isEmpty()) {
-            showError("All fields are required!");
-            return;
-        }
-
         try {
+            InputValidator.validateRegistration(nick, email, pass);
             userDAO.registerUser(nick, pass, email);
-
-            System.out.println("Registration successful for: " + nick);
             handleBackToLogin();
 
-        } catch (UserAlreadyExistsException e) {
-            showError(e.getMessage());
         } catch (Exception e) {
-            showError("Connection error. Please try again later.");
-            e.printStackTrace();
+            showError(e.getMessage());
         }
     }
 
