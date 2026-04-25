@@ -20,13 +20,18 @@ public class PostDAO {
         }
     }
 
-    public List<Post> getAllPosts() {
+    public List<Post> getAllPosts(String currentNickname) {
         List<Post> posts = new ArrayList<>();
-        String sql = "SELECT * FROM posts ORDER BY post_id DESC";
+        String sql = "SELECT p.*, l.user_nickname AS liked_indicator " +
+                "FROM posts p " +
+                "LEFT JOIN post_likes l ON p.post_id = l.post_id AND l.user_nickname = ? " +
+                "ORDER BY p.post_id DESC";
 
         try (Connection conn = DatabaseHelper.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, currentNickname);
+            ResultSet rs = pstmt.executeQuery();
 
             while (rs.next()) {
                 Post post = new Post(
@@ -35,6 +40,9 @@ public class PostDAO {
                 );
                 post.setId(rs.getInt("post_id"));
                 post.setLikes(rs.getInt("likes_count"));
+
+                post.setLikedByMe(rs.getString("liked_indicator") != null);
+
                 posts.add(post);
             }
         } catch (SQLException e) {
@@ -62,59 +70,57 @@ public class PostDAO {
         return posts;
     }
 
-    public void addLike(int postId) {
-        String sql = "UPDATE posts SET likes_count = likes_count + 1 WHERE post_id = ?";
-        executeSimpleUpdate(sql, postId, "Post liked!");
-    }
-
-    public void removeLike(int postId) {
-        String sql = "UPDATE posts SET likes_count = likes_count - 1 WHERE post_id = ? AND likes_count > 0";
-        executeSimpleUpdate(sql, postId, "Like removed.");
-    }
-
-    private void executeSimpleUpdate(String sql, int postId, String successMsg) {
-        try (Connection conn = DatabaseHelper.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, postId);
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) System.out.println("Success: " + successMsg);
-        } catch (SQLException e) {
-            System.err.println("Error: Operation failed - " + e.getMessage());
-        }
-    }
-
-    public void updatePostContent(int postId, String newContent) {
-        String sql = "UPDATE posts SET content = ? WHERE post_id = ?";
-
-        try (Connection conn = DatabaseHelper.getConnection();
-             PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
-            pstmt.setString(1, newContent);
-            pstmt.setInt(2, postId);
-
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                System.out.println("Success: Post #" + postId + " content updated.");
-            }
-        } catch (SQLException e) {
-            System.err.println("Error: Update failed - " + e.getMessage());
-        }
-    }
-
     public void deletePost(int postId) {
         String sql = "DELETE FROM posts WHERE post_id = ?";
-
         try (Connection conn = DatabaseHelper.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-
             pstmt.setInt(1, postId);
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 
-            int rows = pstmt.executeUpdate();
-            if (rows > 0) {
-                System.out.println("Success: Post #" + postId + " deleted.");
+    public void toggleLike(int postId, String nickname) {
+        String checkSql = "SELECT 1 FROM post_likes WHERE post_id = ? AND user_nickname = ?";
+
+        try (Connection conn = DatabaseHelper.getConnection()) {
+            boolean alreadyLiked;
+            try (PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
+                checkStmt.setInt(1, postId);
+                checkStmt.setString(2, nickname);
+                alreadyLiked = checkStmt.executeQuery().next();
+            }
+
+            if (alreadyLiked) {
+                String deleteLike = "DELETE FROM post_likes WHERE post_id = ? AND user_nickname = ?";
+                String decreaseCount = "UPDATE posts SET likes_count = likes_count - 1 WHERE post_id = ?";
+
+                try (PreparedStatement ps1 = conn.prepareStatement(deleteLike);
+                     PreparedStatement ps2 = conn.prepareStatement(decreaseCount)) {
+                    ps1.setInt(1, postId);
+                    ps1.setString(2, nickname);
+                    ps1.executeUpdate();
+
+                    ps2.setInt(1, postId);
+                    ps2.executeUpdate();
+                }
+            } else {
+                String insertLike = "INSERT INTO post_likes (post_id, user_nickname) VALUES (?, ?)";
+                String increaseCount = "UPDATE posts SET likes_count = likes_count + 1 WHERE post_id = ?";
+
+                try (PreparedStatement ps1 = conn.prepareStatement(insertLike);
+                     PreparedStatement ps2 = conn.prepareStatement(increaseCount)) {
+                    ps1.setInt(1, postId);
+                    ps1.setString(2, nickname);
+                    ps1.executeUpdate();
+
+                    ps2.setInt(1, postId);
+                    ps2.executeUpdate();
+                }
             }
         } catch (SQLException e) {
-            System.err.println("Error: Delete failed - " + e.getMessage());
+            e.printStackTrace();
         }
     }
 }

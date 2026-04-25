@@ -2,12 +2,12 @@ package org.example.gui.controllers;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.example.dao.PostDAO;
@@ -15,7 +15,9 @@ import org.example.model.Post;
 import org.example.util.UserSession;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FeedController {
     @FXML private Label welcomeLabel;
@@ -39,15 +41,47 @@ public class FeedController {
 
     private void loadPosts() {
         postsContainer.getChildren().clear();
-        List<Post> allPosts = postDAO.getAllPosts();
+        String currentNick = UserSession.getCurrentUserNickname();
+
+        List<Post> allPosts = postDAO.getAllPosts(currentNick);
 
         for (Post post : allPosts) {
-            Label postLabel = new Label(post.getAuthor() + ": " + post.getContent() + " (❤️ " + post.getLikes() + ")");
-            postLabel.setStyle("-fx-padding: 10; -fx-border-color: #ddd; -fx-border-radius: 5;");
-            postLabel.setMaxWidth(Double.MAX_VALUE);
-
-            postsContainer.getChildren().add(postLabel);
+            HBox postCard = createPostCard(post, currentNick);
+            postsContainer.getChildren().add(postCard);
         }
+    }
+
+    private HBox createPostCard(Post post, String currentNick) {
+        HBox postBox = new HBox(10);
+        postBox.setAlignment(Pos.CENTER_LEFT);
+        postBox.setStyle("-fx-padding: 10; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-color: white;");
+
+        Label content = new Label(post.getAuthor() + ": " + post.getContent());
+        content.setWrapText(true);
+        content.setMaxWidth(Double.MAX_VALUE);
+        HBox.setHgrow(content, Priority.ALWAYS);
+
+        Button likeBtn = new Button(post.isLikedByMe() ? "♥ " + post.getLikes() : "♡ " + post.getLikes());
+        likeBtn.setMinWidth(Button.USE_PREF_SIZE);
+        likeBtn.setOnAction(e -> {
+            postDAO.toggleLike(post.getId(), currentNick);
+            loadPosts();
+        });
+
+        postBox.getChildren().addAll(content, likeBtn);
+
+        if (post.getAuthor().equals(currentNick)) {
+            Button deleteBtn = new Button("🗑");
+            deleteBtn.setMinWidth(Button.USE_PREF_SIZE);
+            deleteBtn.setStyle("-fx-text-fill: red; -fx-background-color: transparent;");
+            deleteBtn.setOnAction(e -> {
+                postDAO.deletePost(post.getId());
+                loadPosts();
+            });
+            postBox.getChildren().add(deleteBtn);
+        }
+
+        return postBox;
     }
 
     @FXML
