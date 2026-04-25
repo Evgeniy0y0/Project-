@@ -4,3 +4,4 @@ org.example.gui
 org.example.gui.controllers
 org.example.model
 org.example.util
+org.example.util.exceptions
