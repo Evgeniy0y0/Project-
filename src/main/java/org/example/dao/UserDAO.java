@@ -63,7 +63,7 @@ public class UserDAO {
 
         } catch (SQLException e) {
             if (e.getErrorCode() == 23505) {
-                System.out.println("Info: User '" + nickname + "' already exists.");
+                System.out.println("Info: User '" + nickname + "' already exist.");
             } else {
                 System.err.println("Error creating user: " + e.getMessage());
             }
