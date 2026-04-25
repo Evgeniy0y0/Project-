@@ -5,6 +5,7 @@ public class Post {
     private String author;
     private String content;
     private int likes;
+    private boolean likedByMe;
 
     public Post(String author, String content) {
         this.author = author;
@@ -22,4 +23,8 @@ public class Post {
 
     public int getLikes() { return likes; }
     public void setLikes(int likes) { this.likes = likes; }
+
+    public boolean isLikedByMe() { return likedByMe; }
+    public void setLikedByMe(boolean likedByMe) { this.likedByMe = likedByMe; }
+
 }

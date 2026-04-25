@@ -44,9 +44,17 @@ public class DatabaseHelper {
                 "content TEXT NOT NULL, " +
                 "likes_count INT DEFAULT 0);";
 
+        String createLikes = "CREATE TABLE IF NOT EXISTS post_likes (" +
+                "post_id INT NOT NULL, " +
+                "user_nickname VARCHAR(100) NOT NULL, " +
+                "PRIMARY KEY (post_id, user_nickname), " +
+                "FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE, " +
+                "FOREIGN KEY (user_nickname) REFERENCES users(nickname) ON DELETE CASCADE);";
+
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
             stmt.execute(createUsers);
             stmt.execute(createPosts);
+            stmt.execute(createLikes);
 
             var rs = conn.getMetaData().getTables(null, null, "USERS", null);
             if (rs.next()) {
