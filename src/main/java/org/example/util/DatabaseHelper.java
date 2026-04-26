@@ -42,7 +42,9 @@ public class DatabaseHelper {
                 "post_id INT AUTO_INCREMENT PRIMARY KEY, " +
                 "author_nickname VARCHAR(100) REFERENCES users(nickname), " +
                 "content TEXT NOT NULL, " +
-                "likes_count INT DEFAULT 0);";
+                "likes_count INT DEFAULT 0, " +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                "updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);";
 
         String createLikes = "CREATE TABLE IF NOT EXISTS post_likes (" +
                 "post_id INT NOT NULL, " +

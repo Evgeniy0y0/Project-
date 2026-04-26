@@ -8,6 +8,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import org.example.dao.PostDAO;
@@ -15,6 +16,7 @@ import org.example.model.Post;
 import org.example.util.UserSession;
 
 import java.io.IOException;
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +28,7 @@ public class FeedController {
     @FXML private VBox postsContainer;
     @FXML private ComboBox<String> leaderboardTypeCombo;
     private final PostDAO postDAO = new PostDAO();
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM HH:mm:ss");
 
     @FXML
     public void initialize() {
@@ -41,13 +44,12 @@ public class FeedController {
 
     private void loadPosts() {
         postsContainer.getChildren().clear();
-        String currentNick = UserSession.getCurrentUserNickname();
 
+        String currentNick = UserSession.getCurrentUserNickname();
         List<Post> allPosts = postDAO.getAllPosts(currentNick);
 
         for (Post post : allPosts) {
-            HBox postCard = createPostCard(post, currentNick);
-            postsContainer.getChildren().add(postCard);
+            postsContainer.getChildren().add(createPostCard(post, currentNick));
         }
     }
 
@@ -56,29 +58,79 @@ public class FeedController {
         postBox.setAlignment(Pos.CENTER_LEFT);
         postBox.setStyle("-fx-padding: 10; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-color: white;");
 
-        Label content = new Label(post.getAuthor() + ": " + post.getContent());
-        content.setWrapText(true);
-        content.setMaxWidth(Double.MAX_VALUE);
-        HBox.setHgrow(content, Priority.ALWAYS);
+        VBox textContainer = new VBox(3);
+        HBox.setHgrow(textContainer, Priority.ALWAYS);
 
-        Button likeBtn = new Button(post.isLikedByMe() ? "♥ " + post.getLikes() : "♡ " + post.getLikes());
-        likeBtn.setMinWidth(Button.USE_PREF_SIZE);
+        Label contentLabel = new Label(post.getAuthor() + ": " + post.getContent());
+        contentLabel.setWrapText(true);
+        contentLabel.setMaxWidth(Double.MAX_VALUE);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM HH:mm:ss");
+
+        String createdStr = post.getCreatedAt().format(DATE_FORMATTER);
+        String updatedStr = post.getUpdatedAt().format(DATE_FORMATTER);
+
+        String timestamp = !createdStr.equals(updatedStr)
+                ? createdStr + " (updated " + updatedStr + ")"
+                : createdStr;
+
+        Label dateLabel = new Label(timestamp);
+        dateLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: gray;");
+
+        textContainer.getChildren().addAll(contentLabel, dateLabel);
+
+        Button likeBtn = new Button((post.isLikedByMe() ? "♥ " : "♡ ") + post.getLikes());
+        likeBtn.setMinWidth(Region.USE_PREF_SIZE);
         likeBtn.setOnAction(e -> {
             postDAO.toggleLike(post.getId(), currentNick);
             loadPosts();
         });
 
-        postBox.getChildren().addAll(content, likeBtn);
+        postBox.getChildren().addAll(textContainer, likeBtn);
 
         if (post.getAuthor().equals(currentNick)) {
+            Button editBtn = new Button("✎");
+            editBtn.setMinWidth(Region.USE_PREF_SIZE);
+
             Button deleteBtn = new Button("🗑");
-            deleteBtn.setMinWidth(Button.USE_PREF_SIZE);
-            deleteBtn.setStyle("-fx-text-fill: red; -fx-background-color: transparent;");
+            deleteBtn.setMinWidth(Region.USE_PREF_SIZE);
+            deleteBtn.setStyle("-fx-text-fill: red;");
+
+            editBtn.setOnAction(e -> {
+                TextArea editArea = new TextArea(post.getContent());
+                editArea.setWrapText(true);
+                editArea.setPrefHeight(60);
+
+                Button cancelBtn = new Button("✕");
+                cancelBtn.setMinWidth(Region.USE_PREF_SIZE);
+
+                int index = postBox.getChildren().indexOf(textContainer);
+                postBox.getChildren().set(index, editArea);
+
+                editBtn.setText("✔");
+
+                int delIndex = postBox.getChildren().indexOf(deleteBtn);
+                postBox.getChildren().set(delIndex, cancelBtn);
+
+                likeBtn.setVisible(false);
+
+                editBtn.setOnAction(saveEvent -> {
+                    String updatedText = editArea.getText().trim();
+                    if (!updatedText.isEmpty()) {
+                        postDAO.updatePost(post.getId(), updatedText);
+                        loadPosts();
+                    }
+                });
+
+                cancelBtn.setOnAction(cancelEvt -> loadPosts());
+            });
+
             deleteBtn.setOnAction(e -> {
                 postDAO.deletePost(post.getId());
                 loadPosts();
             });
-            postBox.getChildren().add(deleteBtn);
+
+            postBox.getChildren().addAll(editBtn, deleteBtn);
         }
 
         return postBox;
