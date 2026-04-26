@@ -1,5 +1,7 @@
 package org.example.gui.controllers;
 
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
@@ -27,20 +29,14 @@ public class FeedController {
     @FXML private TextArea postTextArea;
     @FXML private VBox postsContainer;
     @FXML private ComboBox<String> leaderboardTypeCombo;
+
+    @FXML private TableView<Object> leaderboardTable;
+    @FXML private TableColumn<Object, String> rankColumn;
+    @FXML private TableColumn<Object, String> userColumn;
+    @FXML private TableColumn<Object, String> likesColumn;
+
     private final PostDAO postDAO = new PostDAO();
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM HH:mm:ss");
-
-    @FXML
-    public void initialize() {
-        String nick = UserSession.getCurrentUserNickname();
-        welcomeLabel.setText("Welcome, " + (nick != null ? nick : "Guest") + "!");
-        loadPosts();
-
-        if (leaderboardTypeCombo != null) {
-            leaderboardTypeCombo.getItems().addAll("Top Users", "Top Posts");
-            leaderboardTypeCombo.setValue("Top Users");
-        }
-    }
 
     private void loadPosts() {
         postsContainer.getChildren().clear();
@@ -137,16 +133,6 @@ public class FeedController {
     }
 
     @FXML
-    private void handleLeaderboardTypeChange() {
-        String selected = leaderboardTypeCombo.getValue();
-        if ("Top Users".equals(selected)) {
-            System.out.println("Switching to Top Users...");
-        } else {
-            System.out.println("Switching to Top Posts...");
-        }
-    }
-
-    @FXML
     private void handleCreatePost() {
         String text = postTextArea.getText().trim();
         if (text.isEmpty()) return;
@@ -180,6 +166,66 @@ public class FeedController {
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    @FXML
+    public void initialize() {
+        String nick = UserSession.getCurrentUserNickname();
+        welcomeLabel.setText("Welcome, " + (nick != null ? nick : "Guest") + "!");
+        loadPosts();
+
+        if (leaderboardTypeCombo != null) {
+            leaderboardTypeCombo.getItems().setAll("Top Users", "Top Posts");
+            leaderboardTypeCombo.setValue("Top Users");
+
+            rankColumn.setCellFactory(col -> new TableCell<Object, String>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty) {
+                        setText(null);
+                    } else {
+                        setText(String.valueOf(getIndex() + 1));
+                    }
+                }
+            });
+
+            refreshLeaderboard();
+        }
+        }
+
+    @FXML
+    private void handleLeaderboardTypeChange() {
+        refreshLeaderboard();
+    }
+
+    private void refreshLeaderboard() {
+        if (leaderboardTable == null) return;
+
+        leaderboardTable.getItems().clear();
+        String type = leaderboardTypeCombo.getValue();
+
+        if ("Top Posts".equals(type)) {
+            userColumn.setText("Post Content");
+            likesColumn.setText("Likes");
+
+            userColumn.setCellValueFactory(data ->
+                    new SimpleStringProperty(((Post) data.getValue()).getContent()));
+            likesColumn.setCellValueFactory(data ->
+                    new SimpleStringProperty(String.valueOf(((Post) data.getValue()).getLikes())));
+
+            leaderboardTable.getItems().addAll(postDAO.getTopPosts(10));
+        } else {
+            userColumn.setText("User Nickname");
+            likesColumn.setText("Posts Count");
+
+            userColumn.setCellValueFactory(data ->
+                    new SimpleStringProperty(((PostDAO.AuthorStats) data.getValue()).getNickname()));
+            likesColumn.setCellValueFactory(data ->
+                    new SimpleStringProperty(String.valueOf(((PostDAO.AuthorStats) data.getValue()).getCount())));
+
+            leaderboardTable.getItems().addAll(postDAO.getTopAuthors(10));
         }
     }
 }

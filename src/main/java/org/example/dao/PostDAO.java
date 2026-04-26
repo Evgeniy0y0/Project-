@@ -5,7 +5,9 @@ import org.example.util.DatabaseHelper;
 import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class PostDAO {
     public void savePost(String content, String author) {
@@ -146,6 +148,47 @@ public class PostDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public List<Post> getTopPosts(int limit) {
+        List<Post> posts = new ArrayList<>();
+        String sql = "SELECT * FROM posts ORDER BY likes_count DESC LIMIT ?";
+        try (Connection conn = DatabaseHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, limit);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                Post p = new Post(rs.getString("author_nickname"), rs.getString("content"));
+                p.setId(rs.getInt("post_id"));
+                p.setLikes(rs.getInt("likes_count"));
+                p.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                p.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+                posts.add(p);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return posts;
+    }
+
+    public static class AuthorStats {
+        private final String nickname;
+        private final int count;
+        public AuthorStats(String nickname, int count) { this.nickname = nickname; this.count = count; }
+        public String getNickname() { return nickname; }
+        public int getCount() { return count; }
+    }
+
+    public List<AuthorStats> getTopAuthors(int limit) {
+        List<AuthorStats> stats = new ArrayList<>();
+        String sql = "SELECT author_nickname, COUNT(*) as cnt FROM posts GROUP BY author_nickname ORDER BY cnt DESC LIMIT ?";
+        try (Connection conn = DatabaseHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, limit);
+            ResultSet rs = pstmt.executeQuery();
+            while (rs.next()) {
+                stats.add(new AuthorStats(rs.getString("author_nickname"), rs.getInt("cnt")));
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return stats;
     }
 }
 
