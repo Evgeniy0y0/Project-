@@ -146,7 +146,21 @@ public class FeedController {
 
     @FXML
     private void handleSearch() {
-        System.out.println("Searching for: " + searchField.getText());
+        String query = searchField.getText().trim();
+        String currentNick = UserSession.getCurrentUserNickname();
+
+        postsContainer.getChildren().clear();
+        List<Post> results;
+
+        if (query.isEmpty()) {
+            results = postDAO.getAllPosts(currentNick);
+        } else {
+            results = postDAO.searchByAuthor(query, currentNick);
+        }
+
+        for (Post post : results) {
+            postsContainer.getChildren().add(createPostCard(post, currentNick));
+        }
     }
 
     @FXML
