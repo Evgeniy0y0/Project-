@@ -62,23 +62,34 @@ public class PostDAO {
         return posts;
     }
 
-    public List<Post> getPostsByAuthor(String authorNickname) {
-        List<Post> posts = new ArrayList<>();
-        String sql = "SELECT author_nickname, content, likes_count FROM posts WHERE author_nickname = ?";
+    public List<Post> searchByAuthor(String authorQuery, String currentNickname) {
+        List<Post> results = new ArrayList<>();
+        String sql = "SELECT p.*, l.user_nickname AS liked_indicator " +
+                "FROM posts p " +
+                "LEFT JOIN post_likes l ON p.post_id = l.post_id AND l.user_nickname = ? " +
+                "WHERE p.author_nickname LIKE ? " +
+                "ORDER BY p.post_id DESC";
 
         try (Connection conn = DatabaseHelper.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
 
-            pstmt.setString(1, authorNickname);
-            ResultSet rs = pstmt.executeQuery();
+            pstmt.setString(1, currentNickname);
+            pstmt.setString(2, "%" + authorQuery + "%");
 
+            ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                posts.add(new Post(rs.getString("author_nickname"), rs.getString("content")));
+                Post post = new Post(rs.getString("author_nickname"), rs.getString("content"));
+                post.setId(rs.getInt("post_id"));
+                post.setLikes(rs.getInt("likes_count"));
+                post.setLikedByMe(rs.getString("liked_indicator") != null);
+                post.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                post.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+                results.add(post);
             }
         } catch (SQLException e) {
-            System.err.println("Error: Fetching posts by author failed - " + e.getMessage());
+            e.printStackTrace();
         }
-        return posts;
+        return results;
     }
 
     public void updatePost(int postId, String newContent) {
