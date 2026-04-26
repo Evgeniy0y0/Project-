@@ -1,11 +1,15 @@
 package org.example.model;
 
+import java.time.LocalDateTime;
+
 public class Post {
     private int id;
     private String author;
     private String content;
     private int likes;
     private boolean likedByMe;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
 
     public Post(String author, String content) {
         this.author = author;
@@ -27,4 +31,9 @@ public class Post {
     public boolean isLikedByMe() { return likedByMe; }
     public void setLikedByMe(boolean likedByMe) { this.likedByMe = likedByMe; }
 
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 }

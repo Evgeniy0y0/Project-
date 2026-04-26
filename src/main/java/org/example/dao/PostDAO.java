@@ -3,17 +3,24 @@ package org.example.dao;
 import org.example.model.Post;
 import org.example.util.DatabaseHelper;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class PostDAO {
     public void savePost(String content, String author) {
-        String sql = "INSERT INTO posts (author_nickname, content, likes_count) VALUES (?, ?, ?)";
+        String sql = "INSERT INTO posts (content, author_nickname, created_at, updated_at) VALUES (?, ?, ?, ?)";
+
         try (Connection conn = DatabaseHelper.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, author);
-            pstmt.setString(2, content);
-            pstmt.setInt(3, 0);
+
+            java.sql.Timestamp now = java.sql.Timestamp.valueOf(java.time.LocalDateTime.now());
+
+            pstmt.setString(1, content);
+            pstmt.setString(2, author);
+            pstmt.setTimestamp(3, now);
+            pstmt.setTimestamp(4, now);
+
             pstmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -43,6 +50,8 @@ public class PostDAO {
 
                 post.setLikedByMe(rs.getString("liked_indicator") != null);
 
+                post.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+                post.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
                 posts.add(post);
             }
         } catch (SQLException e) {
@@ -68,6 +77,21 @@ public class PostDAO {
             System.err.println("Error: Fetching posts by author failed - " + e.getMessage());
         }
         return posts;
+    }
+
+    public void updatePost(int postId, String newContent) {
+        String sql = "UPDATE posts SET content = ?, updated_at = ? WHERE post_id = ?";
+        try (Connection conn = DatabaseHelper.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, newContent);
+            pstmt.setTimestamp(2, java.sql.Timestamp.valueOf(java.time.LocalDateTime.now()));
+            pstmt.setInt(3, postId);
+
+            int rows = pstmt.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     public void deletePost(int postId) {
