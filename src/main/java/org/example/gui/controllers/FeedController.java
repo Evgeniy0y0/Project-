@@ -8,6 +8,10 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -17,6 +21,9 @@ import org.example.dao.PostDAO;
 import org.example.model.Post;
 import org.example.util.UserSession;
 
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import java.awt.*;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
@@ -49,64 +56,82 @@ public class FeedController {
         }
     }
 
+    private ImageView loadIcon(String path) {
+        Image image = new Image(getClass().getResourceAsStream("/icons/" + path));
+        ImageView imageView = new ImageView(image);
+        imageView.setFitWidth(18);
+        imageView.setFitHeight(18);
+        return imageView;
+    }
+
     private HBox createPostCard(Post post, String currentNick) {
-        HBox postBox = new HBox(10);
+        HBox postBox = new HBox(15);
         postBox.setAlignment(Pos.CENTER_LEFT);
-        postBox.setStyle("-fx-padding: 10; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-background-color: white;");
+        postBox.getStyleClass().add("post-card");
 
         VBox textContainer = new VBox(3);
         HBox.setHgrow(textContainer, Priority.ALWAYS);
 
-        Label contentLabel = new Label(post.getAuthor() + ": " + post.getContent());
-        contentLabel.setWrapText(true);
-        contentLabel.setMaxWidth(Double.MAX_VALUE);
+        Label authorLabel = new Label(post.getAuthor());
+        authorLabel.getStyleClass().add("author-name");
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMM HH:mm:ss");
+        Label contentLabel = new Label(post.getContent());
+        contentLabel.getStyleClass().add("post-content");
+        contentLabel.setWrapText(true);
+        contentLabel.setMinWidth(50);
 
         String createdStr = post.getCreatedAt().format(DATE_FORMATTER);
         String updatedStr = post.getUpdatedAt().format(DATE_FORMATTER);
-
-        String timestamp = !createdStr.equals(updatedStr)
-                ? createdStr + " (updated " + updatedStr + ")"
-                : createdStr;
+        String timestamp = !createdStr.equals(updatedStr) ? createdStr + " (upd " + updatedStr + ")" : createdStr;
 
         Label dateLabel = new Label(timestamp);
-        dateLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: gray;");
+        dateLabel.getStyleClass().add("date-label");
+        textContainer.getChildren().addAll(authorLabel, contentLabel, dateLabel);
+        postBox.getChildren().add(textContainer);
 
-        textContainer.getChildren().addAll(contentLabel, dateLabel);
+        HBox actionButtons = new HBox(8);
+        actionButtons.setAlignment(Pos.CENTER_RIGHT);
 
-        Button likeBtn = new Button((post.isLikedByMe() ? "♥ " : "♡ ") + post.getLikes());
-        likeBtn.setMinWidth(Region.USE_PREF_SIZE);
+        Button likeBtn = new Button(String.valueOf(post.getLikes()));
+        String likeIcon = post.isLikedByMe() ? "liked.png" : "like.png";
+        likeBtn.setGraphic(loadIcon(likeIcon));
+        likeBtn.getStyleClass().add("button-action");
         likeBtn.setOnAction(e -> {
             postDAO.toggleLike(post.getId(), currentNick);
             loadPosts();
         });
-
-        postBox.getChildren().addAll(textContainer, likeBtn);
+        actionButtons.getChildren().add(likeBtn);
 
         if (post.getAuthor().equals(currentNick)) {
-            Button editBtn = new Button("✎");
-            editBtn.setMinWidth(Region.USE_PREF_SIZE);
+            Button editBtn = new Button();
+            editBtn.setGraphic(loadIcon("edit.png"));
+            editBtn.getStyleClass().add("button-action");
 
-            Button deleteBtn = new Button("🗑");
-            deleteBtn.setMinWidth(Region.USE_PREF_SIZE);
-            deleteBtn.setStyle("-fx-text-fill: red;");
+            Button deleteBtn = new Button();
+            deleteBtn.setGraphic(loadIcon("delete.png"));
+            deleteBtn.getStyleClass().addAll("button-action", "button-delete");
+            deleteBtn.setOnAction(e -> {
+                postDAO.deletePost(post.getId());
+                loadPosts();
+            });
 
             editBtn.setOnAction(e -> {
+                editBtn.setGraphic(null);
                 TextArea editArea = new TextArea(post.getContent());
                 editArea.setWrapText(true);
                 editArea.setPrefHeight(60);
 
                 Button cancelBtn = new Button("✕");
                 cancelBtn.setMinWidth(Region.USE_PREF_SIZE);
+                cancelBtn.getStyleClass().add("button-action");
 
                 int index = postBox.getChildren().indexOf(textContainer);
                 postBox.getChildren().set(index, editArea);
 
                 editBtn.setText("✔");
 
-                int delIndex = postBox.getChildren().indexOf(deleteBtn);
-                postBox.getChildren().set(delIndex, cancelBtn);
+                int delIndex = actionButtons.getChildren().indexOf(deleteBtn);
+                actionButtons.getChildren().set(delIndex, cancelBtn);
 
                 likeBtn.setVisible(false);
 
@@ -117,18 +142,11 @@ public class FeedController {
                         loadPosts();
                     }
                 });
-
                 cancelBtn.setOnAction(cancelEvt -> loadPosts());
             });
-
-            deleteBtn.setOnAction(e -> {
-                postDAO.deletePost(post.getId());
-                loadPosts();
-            });
-
-            postBox.getChildren().addAll(editBtn, deleteBtn);
+            actionButtons.getChildren().addAll(editBtn, deleteBtn);
         }
-
+        postBox.getChildren().add(actionButtons);
         return postBox;
     }
 

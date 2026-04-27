@@ -5,7 +5,7 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="700.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.gui.controllers.FeedController">
+<BorderPane stylesheets="@/style.css" prefHeight="700.0" prefWidth="1200.0" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.gui.controllers.FeedController">
 
     <top>
         <HBox alignment="CENTER_LEFT" spacing="15.0" style="-fx-background-color: #ffffff; -fx-border-color: #dddddd; -fx-border-width: 0 0 1 0;">
@@ -13,17 +13,17 @@
                 <Insets bottom="10.0" left="20.0" right="20.0" top="10.0" />
             </padding>
             <children>
-                <Label text="NetworkApp" textFill="#2c3e50">
+                <Label text="NetworkApp" styleClass="header-logo">
                     <font>
                         <Font name="System Bold" size="20.0" />
                     </font>
                 </Label>
                 <Region prefWidth="20.0" />
                 <TextField fx:id="searchField" prefWidth="300.0" promptText="Search by username..." />
-                <Button onAction="#handleSearch" text="Search" />
+                <Button onAction="#handleSearch" text="Search" styleClass="button-search" />
                 <Region HBox.hgrow="ALWAYS" />
                 <Label fx:id="welcomeLabel" text="Welcome, User!" />
-                <Button onAction="#handleLogout" style="-fx-background-color: #e74c3c; -fx-text-fill: white;" text="Logout" />
+                <Button onAction="#handleLogout" styleClass="button-logout" text="Logout" />
             </children>
         </HBox>
     </top>
@@ -34,19 +34,13 @@
                 <Insets bottom="20.0" left="15.0" right="15.0" top="20.0" />
             </padding>
             <children>
-                <Label text="New Post">
+                <Label text="New Post" styleClass="sidebar-title">
                     <font>
                         <Font name="System Bold" size="16.0" />
                     </font>
                 </Label>
                 <TextArea fx:id="postTextArea" prefHeight="150.0" promptText="What's on your mind?" wrapText="true" />
-                <Button maxWidth="Infinity" onAction="#handleCreatePost" style="-fx-background-color: #3498db; -fx-text-fill: white;" text="Publish Post" />
-
-                <Separator prefWidth="200.0" />
-
-                <Label text="Menu" textFill="#7f8c8d" />
-                <Button maxWidth="Infinity" text="My Profile"/>
-                <Button maxWidth="Infinity" text="Settings"/>
+                <Button maxWidth="Infinity" onAction="#handleCreatePost" style="-fx-background-color: #3498db; -fx-text-fill: white;" text="Publish Post" styleClass="button-publish" />
             </children>
         </VBox>
     </left>
