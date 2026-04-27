@@ -71,10 +71,10 @@
                             <children>
                                 <HBox alignment="CENTER" spacing="15.0">
                                     <children>
-                                        <Label text="Show Top:">
+                                        <Label text="Show Top:" styleClass="leaderboard-label">
                                             <font><Font name="System Bold" size="14.0" /></font>
                                         </Label>
-                                        <ComboBox fx:id="leaderboardTypeCombo" onAction="#handleLeaderboardTypeChange" prefWidth="180.0" />
+                                        <ComboBox fx:id="leaderboardTypeCombo" onAction="#handleLeaderboardTypeChange" prefWidth="180.0"/>
                                     </children>
                                 </HBox>
 

@@ -237,6 +237,7 @@ public class FeedController {
 
         leaderboardTable.getItems().clear();
         String type = leaderboardTypeCombo.getValue();
+        leaderboardTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
 
         if ("Top Posts".equals(type)) {
             userColumn.setText("Post Content");
