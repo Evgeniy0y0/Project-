@@ -4,7 +4,7 @@
 <?import javafx.geometry.Insets?>
 
 <VBox alignment="CENTER" spacing="10.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="org.example.gui.controllers.LoginController">
+      fx:controller="org.example.gui.controllers.LoginController" stylesheets="@/style.css">
     <padding>
         <Insets bottom="20.0" left="20.0" right="20.0" top="20.0"/>
     </padding>
