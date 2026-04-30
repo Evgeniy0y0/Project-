@@ -1,6 +1,5 @@
 package org.example.gui.controllers;
 
-import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -8,10 +7,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -21,15 +18,15 @@ import org.example.dao.PostDAO;
 import org.example.model.Post;
 import org.example.util.UserSession;
 
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import java.awt.*;
 import java.io.IOException;
 import java.time.format.DateTimeFormatter;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
 
+/**
+ * Main controller for the social network feed.
+ * Manages post display, creation, searching, and the leaderboard.
+ */
 public class FeedController {
     @FXML private Label welcomeLabel;
     @FXML private TextField searchField;
@@ -45,25 +42,35 @@ public class FeedController {
     private final PostDAO postDAO = new PostDAO();
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM HH:mm:ss");
 
+    @FXML
+    public void initialize() {
+        String nick = UserSession.getCurrentUserNickname();
+        welcomeLabel.setText("Welcome, " + (nick != null ? nick : "Guest") + "!");
+        loadPosts();
+        setupLeaderboard();
+    }
+
+    /**
+     * Loads and displays all posts from the database.
+     */
     private void loadPosts() {
+        renderPostList(postDAO.getAllPosts(UserSession.getCurrentUserNickname()));
+    }
+
+    /**
+     * Renders a list of posts into the UI container.
+     */
+    private void renderPostList(List<Post> posts) {
         postsContainer.getChildren().clear();
-
         String currentNick = UserSession.getCurrentUserNickname();
-        List<Post> allPosts = postDAO.getAllPosts(currentNick);
-
-        for (Post post : allPosts) {
+        for (Post post : posts) {
             postsContainer.getChildren().add(createPostCard(post, currentNick));
         }
     }
 
-    private ImageView loadIcon(String path) {
-        Image image = new Image(getClass().getResourceAsStream("/icons/" + path));
-        ImageView imageView = new ImageView(image);
-        imageView.setFitWidth(18);
-        imageView.setFitHeight(18);
-        return imageView;
-    }
-
+    /**
+     * Creates a graphical card for an individual post.
+     */
     private HBox createPostCard(Post post, String currentNick) {
         HBox postBox = new HBox(15);
         postBox.setAlignment(Pos.CENTER_LEFT);
@@ -78,7 +85,6 @@ public class FeedController {
         Label contentLabel = new Label(post.getContent());
         contentLabel.getStyleClass().add("post-content");
         contentLabel.setWrapText(true);
-        contentLabel.setMinWidth(50);
 
         String createdStr = post.getCreatedAt().format(DATE_FORMATTER);
         String updatedStr = post.getUpdatedAt().format(DATE_FORMATTER);
@@ -89,12 +95,18 @@ public class FeedController {
         textContainer.getChildren().addAll(authorLabel, contentLabel, dateLabel);
         postBox.getChildren().add(textContainer);
 
+        HBox actionButtons = setupActionButtons(post, currentNick, postBox, textContainer);
+        postBox.getChildren().add(actionButtons);
+
+        return postBox;
+    }
+
+    private HBox setupActionButtons(Post post, String currentNick, HBox postBox, VBox textContainer) {
         HBox actionButtons = new HBox(8);
         actionButtons.setAlignment(Pos.CENTER_RIGHT);
 
         Button likeBtn = new Button(String.valueOf(post.getLikes()));
-        String likeIcon = post.isLikedByMe() ? "liked.png" : "like.png";
-        likeBtn.setGraphic(loadIcon(likeIcon));
+        likeBtn.setGraphic(loadIcon(post.isLikedByMe() ? "liked.png" : "like.png"));
         likeBtn.getStyleClass().add("button-action");
         likeBtn.setOnAction(e -> {
             postDAO.toggleLike(post.getId(), currentNick);
@@ -115,39 +127,46 @@ public class FeedController {
                 loadPosts();
             });
 
-            editBtn.setOnAction(e -> {
-                editBtn.setGraphic(null);
-                TextArea editArea = new TextArea(post.getContent());
-                editArea.setWrapText(true);
-                editArea.setPrefHeight(60);
-
-                Button cancelBtn = new Button("✕");
-                cancelBtn.setMinWidth(Region.USE_PREF_SIZE);
-                cancelBtn.getStyleClass().add("button-action");
-
-                int index = postBox.getChildren().indexOf(textContainer);
-                postBox.getChildren().set(index, editArea);
-
-                editBtn.setText("✔");
-
-                int delIndex = actionButtons.getChildren().indexOf(deleteBtn);
-                actionButtons.getChildren().set(delIndex, cancelBtn);
-
-                likeBtn.setVisible(false);
-
-                editBtn.setOnAction(saveEvent -> {
-                    String updatedText = editArea.getText().trim();
-                    if (!updatedText.isEmpty()) {
-                        postDAO.updatePost(post.getId(), updatedText);
-                        loadPosts();
-                    }
-                });
-                cancelBtn.setOnAction(cancelEvt -> loadPosts());
-            });
+            editBtn.setOnAction(e -> enterEditMode(post, postBox, textContainer, editBtn, actionButtons, likeBtn, deleteBtn));
             actionButtons.getChildren().addAll(editBtn, deleteBtn);
         }
-        postBox.getChildren().add(actionButtons);
-        return postBox;
+        return actionButtons;
+    }
+
+    private void enterEditMode(Post post, HBox postBox, VBox textContainer, Button editBtn, HBox actionButtons, Button likeBtn, Button deleteBtn) {
+        TextArea editArea = new TextArea(post.getContent());
+        editArea.setWrapText(true);
+        editArea.setPrefHeight(60);
+
+        Button cancelBtn = new Button("✕");
+        cancelBtn.getStyleClass().add("button-action");
+
+        int index = postBox.getChildren().indexOf(textContainer);
+        postBox.getChildren().set(index, editArea);
+
+        editBtn.setGraphic(null);
+        editBtn.setText("✔");
+
+        int delIndex = actionButtons.getChildren().indexOf(deleteBtn);
+        actionButtons.getChildren().set(delIndex, cancelBtn);
+        likeBtn.setVisible(false);
+
+        editBtn.setOnAction(saveEvent -> {
+            String updatedText = editArea.getText().trim();
+            if (!updatedText.isEmpty()) {
+                postDAO.updatePost(post.getId(), updatedText);
+                loadPosts();
+            }
+        });
+        cancelBtn.setOnAction(cancelEvt -> loadPosts());
+    }
+
+    private ImageView loadIcon(String path) {
+        Image image = new Image(Objects.requireNonNull(getClass().getResourceAsStream("/icons/" + path)));
+        ImageView imageView = new ImageView(image);
+        imageView.setFitWidth(18);
+        imageView.setFitHeight(18);
+        return imageView;
     }
 
     @FXML
@@ -155,9 +174,7 @@ public class FeedController {
         String text = postTextArea.getText().trim();
         if (text.isEmpty()) return;
 
-        String author = UserSession.getCurrentUserNickname();
-        postDAO.savePost(text, author);
-
+        postDAO.savePost(text, UserSession.getCurrentUserNickname());
         postTextArea.clear();
         loadPosts();
     }
@@ -166,66 +183,42 @@ public class FeedController {
     private void handleSearch() {
         String query = searchField.getText().trim();
         String currentNick = UserSession.getCurrentUserNickname();
-
-        postsContainer.getChildren().clear();
-        List<Post> results;
-
-        if (query.isEmpty()) {
-            results = postDAO.getAllPosts(currentNick);
-        } else {
-            results = postDAO.searchByAuthor(query, currentNick);
-        }
-
-        for (Post post : results) {
-            postsContainer.getChildren().add(createPostCard(post, currentNick));
-        }
+        renderPostList(query.isEmpty() ? postDAO.getAllPosts(currentNick) : postDAO.searchByAuthor(query, currentNick));
     }
 
     @FXML
     private void handleLogout() {
         UserSession.cleanUserSession();
+        switchScene("/org/example/gui/views/login.fxml", "NetworkApp - Login");
+    }
+
+    private void switchScene(String fxmlPath, String title) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/example/gui/views/login.fxml"));
-            Parent root = loader.load();
-
+            Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource(fxmlPath)));
             Stage stage = new Stage();
-            stage.setScene(new Scene(root, 400, 300));
-            stage.setTitle("NetworkApp - Login");
-
-            Stage currentStage = (Stage) welcomeLabel.getScene().getWindow();
-            currentStage.close();
-
+            stage.setScene(new Scene(root));
+            stage.setTitle(title);
+            ((Stage) welcomeLabel.getScene().getWindow()).close();
             stage.show();
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to load scene: " + fxmlPath, e);
         }
     }
 
-    @FXML
-    public void initialize() {
-        String nick = UserSession.getCurrentUserNickname();
-        welcomeLabel.setText("Welcome, " + (nick != null ? nick : "Guest") + "!");
-        loadPosts();
+    private void setupLeaderboard() {
+        if (leaderboardTypeCombo == null) return;
+        leaderboardTypeCombo.getItems().setAll("Top Users", "Top Posts");
+        leaderboardTypeCombo.setValue("Top Users");
 
-        if (leaderboardTypeCombo != null) {
-            leaderboardTypeCombo.getItems().setAll("Top Users", "Top Posts");
-            leaderboardTypeCombo.setValue("Top Users");
-
-            rankColumn.setCellFactory(col -> new TableCell<Object, String>() {
-                @Override
-                protected void updateItem(String item, boolean empty) {
-                    super.updateItem(item, empty);
-                    if (empty) {
-                        setText(null);
-                    } else {
-                        setText(String.valueOf(getIndex() + 1));
-                    }
-                }
-            });
-
-            refreshLeaderboard();
-        }
-        }
+        rankColumn.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : String.valueOf(getIndex() + 1));
+            }
+        });
+        refreshLeaderboard();
+    }
 
     @FXML
     private void handleLeaderboardTypeChange() {
@@ -234,7 +227,6 @@ public class FeedController {
 
     private void refreshLeaderboard() {
         if (leaderboardTable == null) return;
-
         leaderboardTable.getItems().clear();
         String type = leaderboardTypeCombo.getValue();
         leaderboardTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
@@ -242,22 +234,14 @@ public class FeedController {
         if ("Top Posts".equals(type)) {
             userColumn.setText("Post Content");
             likesColumn.setText("Likes");
-
-            userColumn.setCellValueFactory(data ->
-                    new SimpleStringProperty(((Post) data.getValue()).getContent()));
-            likesColumn.setCellValueFactory(data ->
-                    new SimpleStringProperty(String.valueOf(((Post) data.getValue()).getLikes())));
-
+            userColumn.setCellValueFactory(data -> new SimpleStringProperty(((Post) data.getValue()).getContent()));
+            likesColumn.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(((Post) data.getValue()).getLikes())));
             leaderboardTable.getItems().addAll(postDAO.getTopPosts(10));
         } else {
             userColumn.setText("User Nickname");
             likesColumn.setText("Posts Count");
-
-            userColumn.setCellValueFactory(data ->
-                    new SimpleStringProperty(((PostDAO.AuthorStats) data.getValue()).getNickname()));
-            likesColumn.setCellValueFactory(data ->
-                    new SimpleStringProperty(String.valueOf(((PostDAO.AuthorStats) data.getValue()).getCount())));
-
+            userColumn.setCellValueFactory(data -> new SimpleStringProperty(((PostDAO.AuthorStats) data.getValue()).getNickname()));
+            likesColumn.setCellValueFactory(data -> new SimpleStringProperty(String.valueOf(((PostDAO.AuthorStats) data.getValue()).getCount())));
             leaderboardTable.getItems().addAll(postDAO.getTopAuthors(10));
         }
     }
