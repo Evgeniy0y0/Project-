@@ -12,7 +12,7 @@ class PostDAOTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        DatabaseHelper.initializeDatabase();
+        DatabaseHelper.forceInitializeTestDatabase();
         postDAO = new PostDAO();
         userDAO = new UserDAO();
         userDAO.registerUser("author", "pass", "auth@mail.com");
@@ -44,7 +44,8 @@ class PostDAOTest {
     }
 
     @Test
-    void testSearchByAuthor() {
+    void testSearchByAuthor() throws Exception {
+        userDAO.registerUser("other_user", "password", "other@example.com");
         postDAO.savePost("Content 1", "author");
         postDAO.savePost("Content 2", "other_user");
 
