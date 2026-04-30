@@ -82,4 +82,19 @@ class PostDAOTest {
         assertEquals("user1", top.get(0).getNickname());
         assertEquals(2, top.get(0).getCount());
     }
+
+    @Test
+    @DisplayName("Multiple like toggles should maintain correct count")
+    void testMultipleToggles() {
+        postDAO.savePost("Stress test", "author");
+        int postId = postDAO.getAllPosts("author").get(0).getId();
+
+        postDAO.toggleLike(postId, "author");
+        postDAO.toggleLike(postId, "author");
+        postDAO.toggleLike(postId, "author");
+
+        Post post = postDAO.getAllPosts("author").get(0);
+        assertEquals(1, post.getLikes(), "After 3 toggles, likes should be 1");
+        assertTrue(post.isLikedByMe());
+    }
 }

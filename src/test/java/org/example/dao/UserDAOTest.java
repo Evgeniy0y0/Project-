@@ -44,4 +44,14 @@ class UserDAOTest {
             userDAO.registerUser("tester", "other_pass", "other@mail.com");
         });
     }
+
+    @Test
+    @DisplayName("Should throw exception when registering with duplicate email")
+    void testDuplicateEmail() throws Exception {
+        userDAO.registerUser("user1", "pass", "unique@mail.com");
+
+        assertThrows(UserAlreadyExistsException.class, () -> {
+            userDAO.registerUser("user2", "pass", "unique@mail.com");
+        }, "Should not allow duplicate emails");
+    }
 }
