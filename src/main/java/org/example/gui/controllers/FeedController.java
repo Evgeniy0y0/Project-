@@ -87,8 +87,13 @@ public class FeedController {
         contentLabel.setWrapText(true);
 
         String createdStr = post.getCreatedAt().format(DATE_FORMATTER);
-        String updatedStr = post.getUpdatedAt().format(DATE_FORMATTER);
-        String timestamp = !createdStr.equals(updatedStr) ? createdStr + " (upd " + updatedStr + ")" : createdStr;
+        String timestamp;
+        if (post.isEdited()) {
+            String updatedStr = post.getUpdatedAt().format(DATE_FORMATTER);
+            timestamp = String.format("%s (updated %s)", createdStr, updatedStr);
+        } else {
+            timestamp = createdStr;
+        }
 
         Label dateLabel = new Label(timestamp);
         dateLabel.getStyleClass().add("date-label");
@@ -140,12 +145,14 @@ public class FeedController {
 
         Button cancelBtn = new Button("✕");
         cancelBtn.getStyleClass().add("button-action");
+        cancelBtn.setMinWidth(Region.USE_PREF_SIZE);
 
         int index = postBox.getChildren().indexOf(textContainer);
         postBox.getChildren().set(index, editArea);
 
         editBtn.setGraphic(null);
         editBtn.setText("✔");
+        editBtn.setMinWidth(Region.USE_PREF_SIZE);
 
         int delIndex = actionButtons.getChildren().indexOf(deleteBtn);
         actionButtons.getChildren().set(delIndex, cancelBtn);
@@ -195,14 +202,21 @@ public class FeedController {
     private void switchScene(String fxmlPath, String title) {
         try {
             Parent root = FXMLLoader.load(Objects.requireNonNull(getClass().getResource(fxmlPath)));
-            Stage stage = new Stage();
-            stage.setScene(new Scene(root));
+            Stage stage = (Stage) welcomeLabel.getScene().getWindow();
+            Scene scene = new Scene(root, 400, 300);
+
+            stage.setScene(scene);
             stage.setTitle(title);
-            ((Stage) welcomeLabel.getScene().getWindow()).close();
+            stage.centerOnScreen();
+
             stage.show();
         } catch (IOException e) {
             throw new RuntimeException("Failed to load scene: " + fxmlPath, e);
         }
+    }
+
+    private static Scene getScene(Parent root) {
+        return new Scene(root, 400, 300);
     }
 
     private void setupLeaderboard() {

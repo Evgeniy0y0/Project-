@@ -12,7 +12,7 @@ class UserDAOTest {
 
     @BeforeEach
     void setUp() {
-        DatabaseHelper.initializeDatabase();
+        DatabaseHelper.forceInitializeTestDatabase();
         userDAO = new UserDAO();
     }
 

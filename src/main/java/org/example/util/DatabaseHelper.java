@@ -2,41 +2,52 @@ package org.example.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.Properties;
 
+/**
+ * Utility class for database operations.
+ * Handles configuration, connections, and schema management.
+ */
 public class DatabaseHelper {
-    private static final Properties properties = new Properties();
+    private static final Properties PROPERTIES = new Properties();
+    private static final String CONFIG_FILE = "/db.properties";
 
     static {
-        try (InputStream is = DatabaseHelper.class.getResourceAsStream("/db.properties")) {
-            if (is != null) {
-                properties.load(is);
-                System.out.println("Config loaded");
-            } else {
-                System.err.println("Error: file db.properties not found in target/classes");
+        try (InputStream is = DatabaseHelper.class.getResourceAsStream(CONFIG_FILE)) {
+            if (is == null) {
+                throw new RuntimeException("Configuration file not found: " + CONFIG_FILE);
             }
+            PROPERTIES.load(is);
         } catch (IOException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Failed to load database properties", e);
         }
     }
 
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(
-                properties.getProperty("db.url"),
-                properties.getProperty("db.user"),
-                properties.getProperty("db.password")
+                PROPERTIES.getProperty("db.url"),
+                PROPERTIES.getProperty("db.user"),
+                PROPERTIES.getProperty("db.password")
         );
     }
 
+    /**
+     * Standard initialization for the main application.
+     */
     public static void initializeDatabase() {
-        String dropLikes = "DROP TABLE IF EXISTS post_likes;";
-        String dropPosts = "DROP TABLE IF EXISTS posts;";
-        String dropUsers = "DROP TABLE IF EXISTS users;";
+        executeSchema(false);
+    }
 
+    /**
+     * Special initialization for tests.
+     * Ensures tables exist and are empty.
+     */
+    public static void forceInitializeTestDatabase() {
+        executeSchema(true);
+    }
+
+    private static void executeSchema(boolean truncate) {
         String createUsers = "CREATE TABLE IF NOT EXISTS users (" +
                 "nickname VARCHAR(100) PRIMARY KEY, " +
                 "password VARCHAR(100) NOT NULL, " +
@@ -58,22 +69,25 @@ public class DatabaseHelper {
                 "FOREIGN KEY (user_nickname) REFERENCES users(nickname) ON DELETE CASCADE);";
 
         try (Connection conn = getConnection(); Statement stmt = conn.createStatement()) {
-            stmt.execute(dropLikes);
-            stmt.execute(dropPosts);
-            stmt.execute(dropUsers);
-
             stmt.execute(createUsers);
             stmt.execute(createPosts);
             stmt.execute(createLikes);
 
-            var rs = conn.getMetaData().getTables(null, null, "USERS", null);
-            if (rs.next()) {
-                System.out.println("USERS in base.");
+            if (truncate) {
+                String dbName = conn.getMetaData().getDatabaseProductName();
+                if ("H2".equalsIgnoreCase(dbName)) {
+                    stmt.execute("SET REFERENTIAL_INTEGRITY FALSE");
+                    stmt.execute("TRUNCATE TABLE post_likes");
+                    stmt.execute("TRUNCATE TABLE posts");
+                    stmt.execute("TRUNCATE TABLE users");
+                    stmt.execute("SET REFERENTIAL_INTEGRITY TRUE");
+                } else {
+                    stmt.execute("TRUNCATE TABLE post_likes, posts, users CASCADE");
+                }
+                stmt.execute("ALTER TABLE posts ALTER COLUMN post_id RESTART WITH 1");
             }
-
-            System.out.println("H2 Database initialized successfully.");
         } catch (SQLException e) {
-            System.err.println("DB Initialization error: " + e.getMessage());
+            throw new RuntimeException("Database setup failed", e);
         }
     }
 }
