@@ -52,4 +52,34 @@ class PostDAOTest {
         assertEquals(1, results.size());
         assertEquals("author", results.get(0).getAuthor());
     }
+
+    @Test
+    @DisplayName("Should delete all associated likes when post is deleted")
+    void testCascadeDelete() {
+        postDAO.savePost("Post to be deleted", "author");
+        int postId = postDAO.getAllPosts("author").get(0).getId();
+        postDAO.toggleLike(postId, "author");
+
+        postDAO.deletePost(postId);
+
+        List<Post> posts = postDAO.getAllPosts("author");
+        assertTrue(posts.isEmpty(), "Post list should be empty");
+    }
+
+    @Test
+    @DisplayName("Should correctly handle top authors ranking")
+    void testTopAuthorsRanking() throws Exception {
+        userDAO.registerUser("user1", "p", "u1@m.com");
+        userDAO.registerUser("user2", "p", "u2@m.com");
+
+        postDAO.savePost("Post 1", "user1");
+        postDAO.savePost("Post 2", "user1");
+        postDAO.savePost("Post 3", "user2");
+
+        List<PostDAO.AuthorStats> top = postDAO.getTopAuthors(10);
+
+        assertEquals(2, top.size());
+        assertEquals("user1", top.get(0).getNickname());
+        assertEquals(2, top.get(0).getCount());
+    }
 }
