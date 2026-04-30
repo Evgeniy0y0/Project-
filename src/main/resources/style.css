@@ -226,6 +226,20 @@
     -fx-size: 40;
 }
 
+.table-view .table-row-cell:selected {
+    -fx-background-color: #e7f3ff;
+    -fx-background-insets: 0;
+}
+
+.table-view .table-row-cell:selected .text {
+    -fx-fill: #1877f2;
+    -fx-font-weight: bold;
+}
+
+.table-view:focused .table-row-cell:filled:focused:selected {
+    -fx-background-color: #e7f3ff;
+}
+
 .table-view .table-row-cell:odd {
     -fx-background-color: #fbfbfb;
 }
